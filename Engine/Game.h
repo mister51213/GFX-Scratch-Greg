@@ -39,6 +39,7 @@ private:
     void CalculateBaryCentricCoordinates(vector2 desiredPt, vector2 a, vector2 b, vector2 c, float & lambda1, float & lambda2, float & lambda3);
     void DrawTriangle(const triangle2D triangle, Color color);
     vector2 Rotate2D(vector2& vec, float theta);
+    vector3 Rotate3D(vector3 & vec, float theta);
 	/********************************/
 	/*  User Functions              */
 	/********************************/

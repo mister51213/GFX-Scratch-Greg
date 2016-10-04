@@ -26,6 +26,16 @@ struct triangle3D
     vector3 v1, v2, v3;
 };
 
+struct tetrahedron
+{
+    vector3 v1, v2, v3, v4;
+};
+
+struct cube
+{
+    vector3 v1, v2, v3, v4, v5, v6, v7, v8;
+};
+
 static void Vector2Scale(vector2& vec, float scale)
 {
     vec.x *= scale;
@@ -94,5 +104,15 @@ static vector2 MatVecMult2D(const float matrix[2][2], const vector2& vecIn)
     {
         matrix[0][0] * vecIn.x + matrix[0][1] * vecIn.y,
         matrix[1][0] * vecIn.x + matrix[1][1] * vecIn.y
+    };
+}
+
+static vector3 MatVecMult3D(const float matrix[3][3], const vector3& vecIn)
+{
+    return
+    {
+        matrix[0][0] * vecIn.x + matrix[0][1] * vecIn.y + matrix[0][2] * vecIn.z,
+        matrix[1][0] * vecIn.x + matrix[1][1] * vecIn.y + matrix[1][2] * vecIn.z,
+        matrix[2][0] * vecIn.x + matrix[2][1] * vecIn.y + matrix[2][2] * vecIn.z,
     };
 }

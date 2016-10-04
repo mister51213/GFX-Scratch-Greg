@@ -22,16 +22,34 @@
 #include "Game.h"
 #include <chrono>
 
-// GLOBAL VARS
-// Triangle 1
+//******************* GLOBAL VARS **********************//
+// 2D Triangles
 triangle2D t1 = { { 10,10 }, { 15,200 }, { 300,80 } };
-// Triangle 2
 triangle2D t2 = { {100,100},{ 500,150}, { 400,400} };
-// Triangle 3
 triangle2D t3 = { {200,200},{ 150,20}, { 30,200} };
 
 // for triangle animation
 float angDisp = 0.0f;
+
+// 3D Polygons
+// tetrahedron
+tetrahedron tetra1 = 
+    {{200,200,200},
+    { 150,20, 150}, 
+    { 30,200, 50}, 
+    { 30,200, 50}};
+
+cube cube1 =
+// front face
+{ {200,200,0},
+{ 200,300,0},
+{ 300,200,0},
+{ 300,300,0},
+// back face
+{ 200,200,100},
+{ 200,300,100},
+{ 300,200,100},
+{ 300,300,100} };
 
 // Initialize quaternion base rotation to 0
 quaternion totalRotation = { 1.f, 0.f, 0.f, 0.f };
@@ -129,6 +147,18 @@ vector2 Game::Rotate2D(vector2& vec, float theta)
     // multiply by point vector to get transformed point
     //return matrix*vec;
     return MatVecMult2D(matrix, vec);
+}
+
+vector3 Game::Rotate3D(vector3& vec, float theta)
+{
+    // Compose rotation matrix for rotation about Z axis
+    float matZ[3][3] =
+    { { cos(theta), -sin(theta), 0.0f },
+      { sin(theta), cos(theta),  0.0f },
+      { 0.0f,       0.0f,        0.0f }};
+
+    // multiply by point vector to get transformed point
+    return MatVecMult3D(matZ, vec);
 }
 
 void Game::ComposeFrame()
