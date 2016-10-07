@@ -11,6 +11,11 @@ struct vector3
     float x, y, z;
 };
 
+struct vector4
+{
+    float x, y, z, w;
+}; 
+
 struct quaternion
 {
     float w, x, y, z;
@@ -49,6 +54,10 @@ static void Vector3Scale(vector3& vec, float scale)
     vec.z *= scale;
 }
 
+/*********************************************************/
+/****************** OPERATOR OVERLOADS *******************/
+/*********************************************************/
+
 static vector2 operator + (const vector2& vec1, const vector2& vec2)
 {
 return { vec1.x + vec2.x, vec1.y + vec2.y};
@@ -59,9 +68,24 @@ static vector3 operator + (const vector3& vec1, const vector3& vec2)
     return { vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z };
 }
 
+static triangle2D operator + (const triangle2D& t1, const vector2& t2)
+{
+return { t1.v1 + t2, t1.v2 + t2, t1.v3 + t2};
+}
+
+static vector3 operator - (const vector3& vec1, const vector3& vec2)
+{
+    return { vec1.x - vec2.x, vec1.y - vec2.y, vec1.z - vec2.z };
+}
+
 static vector2 operator * (float scalar, vector2 vecIn)
 {
     return{ vecIn.x*scalar, vecIn.y*scalar };
+}
+
+static vector3 operator * (float scalar, vector3 vecIn)
+{
+    return{ vecIn.x*scalar, vecIn.y*scalar, vecIn.z*scalar };
 }
 
 // Intuitive way to do it
@@ -113,6 +137,35 @@ static vector3 MatVecMult3D(const float matrix[3][3], const vector3& vecIn)
     {
         matrix[0][0] * vecIn.x + matrix[0][1] * vecIn.y + matrix[0][2] * vecIn.z,
         matrix[1][0] * vecIn.x + matrix[1][1] * vecIn.y + matrix[1][2] * vecIn.z,
-        matrix[2][0] * vecIn.x + matrix[2][1] * vecIn.y + matrix[2][2] * vecIn.z,
+        matrix[2][0] * vecIn.x + matrix[2][1] * vecIn.y + matrix[2][2] * vecIn.z
     };
 }
+
+static vector4 MatVecMult4D(const float matrix[4][4], const vector4& vecIn)
+{
+    return
+    {
+        matrix[0][0] * vecIn.x + matrix[0][1] * vecIn.y + matrix[0][2] * vecIn.z + matrix[0][3] * vecIn.w,
+        matrix[1][0] * vecIn.x + matrix[1][1] * vecIn.y + matrix[1][2] * vecIn.z + matrix[1][3] * vecIn.w,
+        matrix[2][0] * vecIn.x + matrix[2][1] * vecIn.y + matrix[2][2] * vecIn.z + matrix[2][3] * vecIn.w,
+        matrix[3][0] * vecIn.x + matrix[3][1] * vecIn.y + matrix[3][2] * vecIn.z + matrix[3][3] * vecIn.w
+    };
+}
+
+static triangle2D FlattenTriangle(const triangle3D& t)
+{
+    return
+    { { t.v1.x,t.v1.y},
+      { t.v2.x,t.v2.y},
+      { t.v3.x,t.v3.y} };
+}
+
+static triangle2D ProjectTriangle(const triangle3D& t)
+{
+    return
+    { { t.v1.x,t.v1.y},
+      { t.v2.x,t.v2.y},
+      { t.v3.x,t.v3.y} };
+}
+
+struct lambdas { float lambda1, lambda2, lambda3; };

@@ -23,21 +23,44 @@
 #include <chrono>
 
 //******************* GLOBAL VARS **********************//
+float scrnWHalf = Graphics::ScreenWidth * 0.5f;
+float scrnHHalf = Graphics::ScreenHeight * 0.5f;
+vector2 transToScrn = {scrnWHalf, scrnHHalf};
+
 // 2D Triangles
-triangle2D t1 = { { 10,10 }, { 15,200 }, { 300,80 } };
-triangle2D t2 = { {100,100},{ 500,150}, { 400,400} };
-triangle2D t3 = { {200,200},{ 150,20}, { 30,200} };
+//triangle2D t1 = { { 10,10 }, { 15,200 }, { 300,80 } };
+//triangle2D t2 = { {100,100},{ 500,150}, { 400,400} };
+//triangle2D t3 = { {200,200},{ 150,20}, { 30,200} };
 
-// for triangle animation
-float angDisp = 0.0f;
+//********* TEMPORARY VARIABLE HOLDERS ***********//
+float leftSide;
+float rightSide;
+float top;
+float bottom;
 
-// 3D Polygons
+float lambda1 = 0.0f;
+float lambda2 = 0.0f;
+float lambda3 = 0.0f;
+
+float L1P2 = 0.0f;
+float L2P3 = 0.0f;
+float L3P1 = 0.0f;
+
+// TODO: Make WORLD offset (up here only defines local object space offset)
+/*************  3D Polygons  ********************/
+float orientation = 0.0f;
+float accelFactor = 0.0f;
+const float dstTet1 = 0.01f; // CANNOT BE 0!
+
 // tetrahedron
+const vector3 offset1 = { .0f,.0f,.0f };
 tetrahedron tetra1 = 
-    {{200,200,200},
-    { 150,20, 150}, 
-    { 30,200, 50}, 
-    { 30,200, 50}};
+    {{0.f+offset1.x,100.9f+offset1.y,0.f+offset1.z},
+    { 0.f+offset1.x,-54.f+offset1.y,115.f+offset1.z}, 
+    { -100.f+offset1.x,-54.f+offset1.y,-58.f+offset1.z}, 
+    { 100.f+offset1.x,-54.f+offset1.y,-58.f+offset1.z}};
+
+tetrahedron tetraRotated;
 
 cube cube1 =
 // front face
@@ -59,34 +82,41 @@ Game::Game( MainWindow& wnd )
 	wnd( wnd ),
 	gfx( wnd ),
 	log( L"alog.txt" )
-{
-}
+{}
 
-void Game::Go()
+void Game::Go() // infinite loop
 {
-	gfx.BeginFrame();	
-	UpdateModel();
-	ComposeFrame();
-	gfx.EndFrame();
+	gfx.BeginFrame(); // clears the screen	
+	UpdateModel(); // game logic only
+    ComposeFrame(); // render instantaneous frame
+	gfx.EndFrame(); // swap buffer - present frame
 }
 
 void Game::UpdateModel()
 {
-    angDisp += 0.01;
+    if (++m_x + 50 > gfx.ScreenWidth)
+    {
+        m_x = 0;
+        if ((m_y += 50) + 50 > gfx.ScreenHeight)
+        {
+            m_y = 0;
+        }
+    }
 
-	if( ++m_x + 50 > gfx.ScreenWidth )
-	{
-		m_x = 0;
-		if( (m_y += 50) + 50 > gfx.ScreenHeight )
-		{
-			m_y = 0;
-		}
-	}
+    if (wnd.kbd.KeyIsPressed(VK_SPACE))
+    {
+        // animate rotation
+        orientation += accelFactor;
+    }
+    if (wnd.kbd.KeyIsPressed(VK_UP))
+        accelFactor += 0.005;
+   if (wnd.kbd.KeyIsPressed(VK_DOWN))
+        accelFactor -= 0.005;
 
-	if( wnd.kbd.KeyIsPressed( VK_ESCAPE ) )
-	{
-		wnd.Kill();
-	}
+    if (wnd.kbd.KeyIsPressed(VK_ESCAPE))
+    {
+        wnd.Kill();
+    }
 }
 
 // Lambda1, 2, and 3 are the coefficients reprsenting how much of each
@@ -98,8 +128,7 @@ void Game::CalculateBaryCentricCoordinates(
     vector2 c,
     float& lambda1,
     float& lambda2,
-    float& lambda3
-)
+    float& lambda3)
 {
     lambda1 = ((b.y - c.y)*(desiredPt.x - c.x) + (c.x - b.x)*(desiredPt.y - c.y))/
         ((b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y));
@@ -110,31 +139,191 @@ void Game::CalculateBaryCentricCoordinates(
     lambda3 = 1.0f - lambda1 - lambda2;
 }
 
-// TODO' make nested coordinate space for rotating triangle relative to its center
+void Game::CalculateScanLineCoordinates()
+{
+}
+
+vector4 Game::ProjectionMatrix(const float matrix[4][4], const vector3& vecIn)
+{
+    float halfHeight = gfx.ScreenHeight*0.5f;
+    float halfWidth = gfx.ScreenWidth*0.5f;
+    vector4 vec4 = { vecIn.x,vecIn.y,vecIn.z,1.0f };
+    return vec4;
+}
+
+// TODO: fix winding order and redundancies
+vector<triangle3D> Game::GetTriangleList(tetrahedron polygon)
+{
+    vector<triangle3D> triList;
+    triList.push_back({ polygon.v1, polygon.v2, polygon.v3 });
+        triList.push_back({ polygon.v1, polygon.v4, polygon.v3 });
+            triList.push_back({ polygon.v1, polygon.v2, polygon.v4 });
+                 triList.push_back({ polygon.v4, polygon.v2, polygon.v3 });
+
+    return triList;
+}
 
 void Game::DrawTriangle(const triangle2D triangle, Color color)
+{
+    // Bounding box - uses temporary global variables up top
+    leftSide = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    rightSide = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    vector<lambdas> vertexLambdas;
+
+    for (int j = top; j <= bottom; j++)
+    {
+        for (int i = leftSide; i <= rightSide; i++)
+        {
+            if (i > 0 && i < gfx.ScreenWidth&&j>0 && j < gfx.ScreenHeight)
+            {
+                CalculateBaryCentricCoordinates({ (float)i,(float)j }, triangle.v1, triangle.v2, triangle.v3, lambda1, lambda2, lambda3);
+
+                if (lambda1 >= 0.0f && lambda2 >= 0.0f && lambda3 >= 0.0f)
+                {
+                    L1P2 = lambda1 + lambda2;
+                    L2P3 = lambda2 + lambda3;
+                    L3P1 = lambda3 + lambda1;
+
+                    //if (L1P2 >= .98f && L1P2 <= 1.02f ||
+                    //    L2P3 >= .98f && L2P3 <= 1.02f ||
+                    //    L3P1 >= .98f && L3P1 <= 1.02f)
+                    //    gfx.PutPixel(i, j, Colors::Yellow);
+                    //else
+                        gfx.PutPixel(i, j, color);
+                }
+            }
+            // Draw Outline
+            //float L1P2 = lambda1 + lambda2;
+            //float L2P3 = lambda2 + lambda3;
+            //float L3P1 = lambda3 + lambda1;
+            //if (L1P2 >= .98f && L1P2 <= 1.02f ||
+            //    L2P3 >= .98f && L2P3 <= 1.02f ||
+            //    L3P1 >= .98f && L3P1 <= 1.02f)
+            //{
+            //    //Color color(Colors::MakeRGB(i, j, 255));
+            //    gfx.PutPixel(i, j, Colors::Red);
+            //}
+        }
+    }
+}
+
+// TODO: make this recycle same barycentric coordinates from triangle fill function
+// TODO: that makes it go MUCH faster, but the issue is that the outlines wont appear
+//       in that case because it finishes drawing the triangle before moving onto the
+//       outline draw function, so the barycentric coordinates are invalid by that stage.
+
+void Game::DrawTriangleScanLine(const triangle2D triangle, Color color)
+{
+    // Bounding box - use precalculated vars up top from fill algorithm
+    //leftSide = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    //rightSide = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    //top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    //bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    // calculate slopes
+    float slope21 = (triangle.v2.y - triangle.v1.y) / (triangle.v2.x - triangle.v1.x);
+    float slope32 = (triangle.v3.y - triangle.v2.y) / (triangle.v3.x - triangle.v2.x);
+    float slope13 = (triangle.v1.y - triangle.v3.y) / (triangle.v1.x - triangle.v3.x);
+
+    //calculate y intercepts(b):
+    // y = mx + b
+    // b = y - mx
+    float b21 = triangle.v1.y - triangle.v1.x*slope21;
+    float b32 = triangle.v2.y - triangle.v2.x*slope32;
+    float b13 = triangle.v3.y - triangle.v3.x*slope13;
+
+    // line by line method
+    for (int j = triangle.v1.y ; j < triangle.v2.y; j++)
+    {
+        for (int i = triangle.v1.x; i < triangle.v2.x; i++)
+        {
+            int y = i*slope21 + b21;
+
+            if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
+            {
+
+                gfx.PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+
+        for (int j = triangle.v2.y ; j < triangle.v3.y; j++)
+    {
+        for (int i = triangle.v2.x; i < triangle.v3.x; i++)
+        {
+            int y = i*slope32 + b32;
+
+            if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
+            {
+
+                gfx.PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+
+      for (int j = triangle.v3.y ; j < triangle.v1.y; j++)
+    {
+        for (int i = triangle.v3.x; i < triangle.v1.x; i++)
+        {
+            int y = i*slope13 + b13;
+
+            if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
+            {
+
+                gfx.PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+}
+
+void Game::DrawTriOutline(const triangle2D triangle, Color color)
 {
     // coordinate coefficients
     float lambda1 = 0.0f;
     float lambda2 = 0.0f;
     float lambda3 = 0.0f;
 
-    for (int j = 0; j < gfx.ScreenHeight; j++)
+    //TODO: find a way to recycle this between outline and fill functions w/o clashing
+    // Bounding box - use precalculated vars up top from fill algorithm
+    leftSide = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    rightSide = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    for (int j = top; j < bottom; j++)
     {
-        for (int i = 0; i < gfx.ScreenWidth; i++)
+        for (int i = leftSide; i < rightSide; i++)
         {
-            CalculateBaryCentricCoordinates({ (float)i,(float)j }, triangle.v1, triangle.v2, triangle.v3, lambda1, lambda2, lambda3);
-            //validate Barycentric coordinates and fill if inside triangle
-            if (lambda1 >= 0.0f && lambda2 >= 0.0f && lambda3 >= 0.0f)
+            if (i > 0 && i < gfx.ScreenWidth&&j>0 && j < gfx.ScreenHeight)
             {
-                //Color color(Colors::MakeRGB(i, j, 255));
-                gfx.PutPixel(i, j, color);
+                CalculateBaryCentricCoordinates({ (float)i,(float)j }, triangle.v1, triangle.v2, triangle.v3, lambda1, lambda2, lambda3);
+                //validate Barycentric coordinates and draw if on lines
+                if (lambda1 >= 0.0f && lambda2 >= 0.0f && lambda3 >= 0.0f)
+                {
+                    L1P2 = lambda1 + lambda2;
+                    L2P3 = lambda2 + lambda3;
+                    L3P1 = lambda3 + lambda1;
+
+                    if (L1P2 >= .995f && L1P2 <= 1.005f ||
+                        L2P3 >= .995f && L2P3 <= 1.005f ||
+                        L3P1 >= .995f && L3P1 <= 1.005f)
+                    {
+                        gfx.PutPixel(i, j, color);
+                    }
+                }
             }
         }
     }
 }
 
-//TODO' MAKE SCANLINE DRAWING ALGORITHM for triangle
+//TODO: MAKE SCANLINE DRAWING ALGORITHM for triangle
+//TODO: Right now its drawing more triangles than it needs to;
+// In the triangle list, it's drawing a separate triangle for every
+// one in the list, duplicating vertices. Fix the triangle winding
+// order to avoid this problem.
 
 vector2 Game::Rotate2D(vector2& vec, float theta)
 {
@@ -149,16 +338,79 @@ vector2 Game::Rotate2D(vector2& vec, float theta)
     return MatVecMult2D(matrix, vec);
 }
 
-vector3 Game::Rotate3D(vector3& vec, float theta)
+vector3 Game::Rotate3DZ(vector3& vec, float theta)
 {
     // Compose rotation matrix for rotation about Z axis
     float matZ[3][3] =
     { { cos(theta), -sin(theta), 0.0f },
       { sin(theta), cos(theta),  0.0f },
-      { 0.0f,       0.0f,        0.0f }};
+      { 0.0f,       0.0f,        1.0f }};
 
     // multiply by point vector to get transformed point
     return MatVecMult3D(matZ, vec);
+}
+
+vector3 Game::Rotate3DX(vector3& vec, float theta)
+{
+    // Compose rotation matrix for rotation about Z axis
+    float matX[3][3] =
+    { { 1.0f, 0.0f, 0.0f },
+      { 0.0f, cos(theta), -sin(theta)},
+      { 0.0f, sin(theta), cos(theta)}};
+
+    // multiply by point vector to get transformed point
+    return MatVecMult3D(matX, vec);
+}
+
+vector3 Game::Rotate3DY(vector3& vec, float theta)
+{
+    // Compose rotation matrix for rotation about Z axis
+    float matZ[3][3] =
+    { { cos(theta), 0.0f, sin(theta)},
+      { 0.0f, 1.0f, 0.0f },
+      { -sin(theta), 0.0f, cos(theta)}};
+
+    // multiply by point vector to get transformed point
+    return MatVecMult3D(matZ, vec);
+}
+
+vector2 Game::ProjectPt(vector3& vecIn, float distance)
+{
+    //// get reciprocal of distance
+    float DR = distance;
+
+    // column major
+    float matP[4][4] =
+    { { 1.f, 0.f, 0.f, 0.f },
+      { 0.f, 1.f, 0.f, 0.f },
+      { 0.f, 0.f, 1.f, 0.f },
+      { 0.f, 0.f, DR, 0.f } };
+    vector4 vecPadded = { vecIn.x, vecIn.y, vecIn.z, 1.f};
+    vector4 projectedV = MatVecMult4D(matP, vecPadded);
+
+    vector2 pVFinal;
+    if (projectedV.w != 0.0f) // protect from divide by zero
+    {
+        pVFinal = { projectedV.x / projectedV.w,projectedV.y / projectedV.w/*, projectedV.z / projectedV.w */};
+    }
+    else
+    {
+        pVFinal = { projectedV.x / 0.001f,projectedV.y / 0.001f/*, projectedV.z / 0.001f */};
+    }
+
+    return{ pVFinal.x,pVFinal.y };
+
+
+    //return{ vecIn.x/vecIn.z, vecIn.y/vecIn.z };
+}
+    // translate center of polygon to origin
+vector<vector3> Game::Translate(vector<vector3>& vertices, vector3& worldPosition)
+{
+    for each (vector3 vert in vertices)
+    {
+        vert = vert + worldPosition;
+    }
+    return vertices;
 }
 
 void Game::ComposeFrame()
@@ -193,29 +445,55 @@ void Game::ComposeFrame()
     //    {
     //            gfx.PutPixel(i, j, Colors::MakeRGB(i*0.2, j*0.4, 255));full
     //    }
+    //}    
+    //DrawTriangle(t1, Colors::Red);
+    //triangle2D t1R1 = {
+    //Rotate2D(t1.v1, 0.05),
+    //Rotate2D(t1.v2, 0.05),
+    //Rotate2D(t1.v3, 0.05)
+    //};
+    //DrawTriangle(t1R1, Colors::Blue);
+    //triangle2D t1R2 = {
+    //    Rotate2D(t1.v1, 0.15),
+    //    Rotate2D(t1.v2, 0.15),
+    //    Rotate2D(t1.v3, 0.15)
+    //};
+    //DrawTriangle(t1R2, Colors::Yellow);    
+    //triangle2D t1R3 = 
+    //{   Rotate2D(t1.v1, angDisp),
+    //    Rotate2D(t1.v2, angDisp),
+    //    Rotate2D(t1.v3, angDisp)
+    //};
+    //DrawTriangle(t1R3, Colors::White);
+
+    // manually rotate vertices in tetrahedron
+    tetraRotated.v1 = Rotate3DX(tetra1.v1, orientation);
+    tetraRotated.v2 = Rotate3DX(tetra1.v2, orientation);
+    tetraRotated.v3 = Rotate3DX(tetra1.v3, orientation);
+    tetraRotated.v4 = Rotate3DX(tetra1.v4, orientation);
+
+    vector<triangle3D> tRList3D = GetTriangleList(tetraRotated);
+    vector<triangle2D> tRList2D;
+
+    for each(triangle3D t in tRList3D)
+    {
+        tRList2D.push_back(
+        { ProjectPt(t.v1,dstTet1),ProjectPt(t.v2,dstTet1),ProjectPt(t.v3,dstTet1)});
+    }
+    for (int i = 0; i < tRList2D.size(); i++)
+    {
+        tRList2D[i].v1 = tRList2D[i].v1 + transToScrn;
+        tRList2D[i].v2 = tRList2D[i].v2 + transToScrn;
+        tRList2D[i].v3 = tRList2D[i].v3 + transToScrn;
+    }
+
+    //for each(triangle2D t in tRList2D)
+    //{
+    //    DrawTriangle(t, Colors::Cyan);
     //}
-
-    DrawTriangle(t1, Colors::Red);
-
-    // TODO: later convert this system to radians
-    triangle2D t1R1 = {
-    Rotate2D(t1.v1, 0.05),
-    Rotate2D(t1.v2, 0.05),
-    Rotate2D(t1.v3, 0.05)
-    };
-    DrawTriangle(t1R1, Colors::Blue);
-
-    triangle2D t1R2 = {
-        Rotate2D(t1.v1, 0.15),
-        Rotate2D(t1.v2, 0.15),
-        Rotate2D(t1.v3, 0.15)
-    };
-    DrawTriangle(t1R2, Colors::Yellow);
-    
-    triangle2D t1R3 = 
-    {   Rotate2D(t1.v1, angDisp),
-        Rotate2D(t1.v2, angDisp),
-        Rotate2D(t1.v3, angDisp)
-    };
-    DrawTriangle(t1R3, Colors::White);
+        for each(triangle2D t in tRList2D)
+    {
+        //DrawTriOutline(t, Colors::Yellow);
+            DrawTriangleScanLine(t, Colors::Yellow);
+    }
 }
