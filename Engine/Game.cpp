@@ -50,7 +50,7 @@ float L3P1 = 0.0f;
 /*************  3D Polygons  ********************/
 float orientation = 0.0f;
 float accelFactor = 0.0f;
-const float dstTet1 = .10f; // CANNOT BE 0!
+const float dstTet1 = .01f; // CANNOT BE 0!
 
 // tetrahedron
 const vector3 offset1 = { .0f,.0f,.0f };
@@ -351,8 +351,8 @@ vector3 Game::Rotate3DX(vector3& vec, float theta)
     // Compose rotation matrix for rotation about Z axis
     float matX[3][3] =
     { { 1.0f, 0.0f, 0.0f },
-      { 0.0f, cos(theta), -sin(theta)},
-      { 0.0f, sin(theta), cos(theta)}};
+      { 0.0f, cos(theta), sin(theta)},
+      { 0.0f, -sin(theta), cos(theta)}};
 
     // multiply by point vector to get transformed point
     return MatVecMult3D(matX, vec);

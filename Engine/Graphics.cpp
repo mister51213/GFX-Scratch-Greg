@@ -291,7 +291,7 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
     int distanceX = end.x - start.x;
     int distanceY = end.y - start.y;
 
-    // for shallow lines up to 45 degrees
+    // for shallow slope ~ 45 degrees
     if (abs(distanceY) < abs(distanceX))
     {
         // calculate slope
@@ -309,11 +309,32 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
             }
         }
     }    
-    else // for steep lines down to 45 degrees
+    else // whne y > x; for steep slope ~ 45 degrees
     {
+        int y2;
+        int y1;
+        int x2;
+        int x1;
+
+        if (start.y > end.y) // swap values to swap looping order
+        {
+            y2 = start.y;
+            y1 = end.y;
+            x2 = start.x;
+            x1 = end.x;
+        }
+        else
+        {
+            y2 = end.y;
+            y1 = start.y;
+            x2 = end.x;
+            x1 = start.x;
+        }
+
         float slope = (float)distanceX / (float)distanceY;
         float b = start.x - start.y * slope;
-        for (int y = start.y; y <= end.y; y++)
+
+        for (int y = y1; y <= y2; y++)
         {
             int x = slope * y + b;     
             if (x > 0 && x < ScreenWidth && y > 0 && y < ScreenHeight)
