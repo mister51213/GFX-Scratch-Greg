@@ -48,11 +48,13 @@ private:
     void DrawTriangleScanLine(const triangle2D triangle, Color color);
     void DrawTriOutline(const triangle2D triangle, Color color);
     vector2 Rotate2D(vector2& vec, float theta);
-    vector3 Rotate3DZ(vector3 & vec, float theta);
+    vector3 Rotate3D(vector3 & vec, const float& theta, char axis);
 
-    vector3 Rotate3DX(vector3 & vec, float theta);
+    vector3 Rotate3DALT(vector3 & vec, const float & theta, char axis);
 
-    vector3 Rotate3DY(vector3 & vec, float theta);
+    //vector3 Rotate3DX(vector3 & vec, float theta);
+
+    //vector3 Rotate3DY(vector3 & vec, float theta);
 
     vector2 ProjectPt(vector3 & vec, float distance);
 

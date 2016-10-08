@@ -50,7 +50,7 @@ float L3P1 = 0.0f;
 /*************  3D Polygons  ********************/
 float orientation = 0.0f;
 float accelFactor = 0.0f;
-const float dstTet1 = .01f; // CANNOT BE 0!
+float dstTet1 = .01f; // CANNOT BE 0!
 
 // tetrahedron
 const vector3 offset1 = { .0f,.0f,.0f };
@@ -60,7 +60,9 @@ tetrahedron tetra1 =
     { -1000.f+offset1.x,-540.f+offset1.y,-580.f+offset1.z}, 
     { 1000.f+offset1.x,-540.f+offset1.y,-580.f+offset1.z}};
 
-tetrahedron tetraRotated;
+tetrahedron tetraRotated = tetra1;
+
+char axis = 'X';
 
 cube cube1 =
 // front face
@@ -103,15 +105,75 @@ void Game::UpdateModel()
         }
     }
 
-    if (wnd.kbd.KeyIsPressed(VK_SPACE))
+    // ACCELERATE AND DECELERATE ROTATION
+    if (wnd.kbd.KeyIsPressed(VK_END))
     {
-        // animate rotation
-        orientation += accelFactor;
+    accelFactor = 0.0f;
+    orientation = 0.0f;
     }
+    if (wnd.kbd.KeyIsPressed(VK_SPACE))
+    accelFactor += 0.0001;
+    if(wnd.kbd.KeyIsPressed(VK_CONTROL))
+    accelFactor -= 0.0001;
+
+    // PITCH UP
     if (wnd.kbd.KeyIsPressed(VK_UP))
-        accelFactor += 0.005;
-   if (wnd.kbd.KeyIsPressed(VK_DOWN))
-        accelFactor -= 0.005;
+    {
+    orientation += accelFactor;
+    axis = 'X';
+    }
+
+    // PITCH DOWN
+    else if (wnd.kbd.KeyIsPressed(VK_DOWN))
+    {
+    orientation -= accelFactor;
+    axis = 'X';
+    }
+
+    // YAW LEFT
+    if (wnd.kbd.KeyIsPressed(VK_LEFT))
+    {
+    orientation -= accelFactor;
+    axis = 'Y';
+    }
+
+    // YAW RIGHT
+    if (wnd.kbd.KeyIsPressed(VK_RIGHT))
+    {
+    orientation += accelFactor;
+    axis = 'Y';
+    }
+
+    // ROLL RIGHT
+    if (wnd.kbd.KeyIsPressed('Q'))
+    {
+    orientation += accelFactor;
+    axis = 'Z';
+    }
+
+    // ROLL LEFT
+    if (wnd.kbd.KeyIsPressed('E'))
+    {
+    orientation -= accelFactor;
+    axis = 'Z';
+    }
+    
+   // change distance to polygon
+   if (wnd.kbd.KeyIsPressed('S'))
+   {
+       if (dstTet1 == -0.001)
+       dstTet1 += 0.0025f;
+       else
+       dstTet1 += 0.001f;
+   }      
+       
+       if (wnd.kbd.KeyIsPressed('W'))
+   {
+       if(dstTet1==0.001)
+       dstTet1 -= 0.0025f;
+       else
+       dstTet1 -= 0.001f;
+   }
 
     if (wnd.kbd.KeyIsPressed(VK_ESCAPE))
     {
@@ -334,41 +396,83 @@ vector2 Game::Rotate2D(vector2& vec, float theta)
     return MatVecMult2D(matrix, vec);
 }
 
-vector3 Game::Rotate3DZ(vector3& vec, float theta)
+vector3 Game::Rotate3D(vector3& vec, const float& theta, char axis)
 {
-    // Compose rotation matrix for rotation about Z axis
-    float matZ[3][3] =
-    { { cos(theta), -sin(theta), 0.0f },
-      { sin(theta), cos(theta),  0.0f },
-      { 0.0f,       0.0f,        1.0f }};
+    if (axis == 'Z')
+        // Compose rotation matrix for rotation about Z axis
+    {
+        float matZ[3][3] =
+        { { cos(theta), -sin(theta), 0.0f },
+          { sin(theta), cos(theta),  0.0f },
+          { 0.0f,       0.0f,        1.0f } };
 
-    // multiply by point vector to get transformed point
-    return MatVecMult3D(matZ, vec);
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matZ, vec);
+    }
+
+    if (axis == 'X')
+    {
+        float matX[3][3] =
+        { { 1.0f, 0.0f, 0.0f },
+          { 0.0f, cos(theta), -sin(theta)},
+          { 0.0f, sin(theta), cos(theta)} };
+
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matX, vec);
+    }
+
+    if (axis == 'Y')
+    {
+        // Compose rotation matrix for rotation about Z axis
+        float matZ[3][3] =
+        { { cos(theta), 0.0f, sin(theta)},
+          { 0.0f, 1.0f, 0.0f },
+          { -sin(theta), 0.0f, cos(theta)} };
+
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matZ, vec);
+    }
+    else
+        return vec;
 }
 
-vector3 Game::Rotate3DX(vector3& vec, float theta)
+vector3 Game::Rotate3DALT(vector3& vec, const float& theta, char axis)
 {
-    // Compose rotation matrix for rotation about Z axis
-    float matX[3][3] =
-    { { 1.0f, 0.0f, 0.0f },
-      { 0.0f, cos(theta), sin(theta)},
-      { 0.0f, -sin(theta), cos(theta)}};
+        float matX[3][3] =
+        { { 1.0f, 0.0f, 0.0f },
+        { 0.0f, cos(theta), -sin(theta)},
+        { 0.0f, sin(theta), cos(theta)} };
 
-    // multiply by point vector to get transformed point
-    return MatVecMult3D(matX, vec);
+        float matY[3][3] =
+        { { cos(theta), 0.0f, sin(theta)},
+        { 0.0f, 1.0f, 0.0f },
+        { -sin(theta), 0.0f, cos(theta)} };
+
+        float matZ[3][3] =
+        { { cos(theta), -sin(theta), 0.0f },
+        { sin(theta), cos(theta),  0.0f },
+        { 0.0f,       0.0f,        1.0f } };
+
+        float matResult[3][3];
+
+        if (axis == 'X')
+        {
+        }
+        if (axis == 'Y')
+        {
+        }
+        if (axis == 'Z')
+        {
+        }
+
+    Mat3Concat(matResult[0], matY, matX);
+    Mat3Concat(matResult[0], matZ, matY);
+
+    // Z Matrix now CONTAINS Concatenated rotation value
+    vec = MatVecMult3D(matResult, vec);
+    return vec;
 }
 
-vector3 Game::Rotate3DY(vector3& vec, float theta)
-{
-    // Compose rotation matrix for rotation about Z axis
-    float matZ[3][3] =
-    { { cos(theta), 0.0f, sin(theta)},
-      { 0.0f, 1.0f, 0.0f },
-      { -sin(theta), 0.0f, cos(theta)}};
-
-    // multiply by point vector to get transformed point
-    return MatVecMult3D(matZ, vec);
-}
 
 vector2 Game::ProjectPt(vector3& vecIn, float distance)
 {
@@ -393,9 +497,7 @@ vector2 Game::ProjectPt(vector3& vecIn, float distance)
     {
         pVFinal = { projectedV.x / 0.001f,projectedV.y / 0.001f/*, projectedV.z / 0.001f */};
     }
-
     return{ pVFinal.x,pVFinal.y };
-
 
     //return{ vecIn.x/vecIn.z, vecIn.y/vecIn.z };
 }
@@ -462,13 +564,12 @@ void Game::ComposeFrame()
     //};
     //DrawTriangle(t1R3, Colors::White);
 
-    // manually rotate vertices in tetrahedron
-    tetraRotated.v1 = Rotate3DX(tetra1.v1, orientation);
-    tetraRotated.v2 = Rotate3DX(tetra1.v2, orientation);
-    tetraRotated.v3 = Rotate3DX(tetra1.v3, orientation);
-    tetraRotated.v4 = Rotate3DX(tetra1.v4, orientation);
+    Rotate3D(tetra1.v1, orientation, axis);
+    Rotate3D(tetra1.v2, orientation, axis);
+    Rotate3D(tetra1.v3, orientation, axis);
+    Rotate3D(tetra1.v4, orientation, axis);
 
-    vector<triangle3D> tRList3D = GetTriangleList(tetraRotated);
+    vector<triangle3D> tRList3D = GetTriangleList(tetra1);
     vector<triangle2D> tRList2D;
 
     for each(triangle3D t in tRList3D)
@@ -490,7 +591,7 @@ void Game::ComposeFrame()
         for each(triangle2D t in tRList2D)
     {
         //DrawTriOutline(t, Colors::Yellow);
-//            DrawTriangleScanLine(t, Colors::Yellow);
+    //DrawTriangleScanLine(t, Colors::Yellow);
             gfx.DrawLine(t.v1, t.v2, Colors::Yellow);
                         gfx.DrawLine(t.v2, t.v3, Colors::Red);
                                     gfx.DrawLine(t.v3, t.v1, Colors::Blue);

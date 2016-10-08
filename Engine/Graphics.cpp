@@ -315,7 +315,7 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
         }
         // calculate slope
         float slope = (float)distanceY / (float)distanceX;
-        //calculate y intercepts(b)
+        //calculate y intercept(b)
         float b = y1 - x1 * slope;
 
         for (int x = x1; x < x2; x++)
@@ -325,6 +325,7 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
             if (x > 0 && x < ScreenWidth && y > 0 && y < ScreenHeight)
             {
                 PutPixel(x, y, c);
+                PutPixel(x++, y, c);
             }
         }
     }    
@@ -350,9 +351,12 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
 
         for (int y = y1; y <= y2; y++)
         {
-            int x = slope * y + b;     
+            int x = slope * y + b + 0.5f;     
             if (x > 0 && x < ScreenWidth && y > 0 && y < ScreenHeight)
-            PutPixel(x, y, c);
+            {
+                PutPixel(x, y, c);
+                PutPixel(x++, y, c);
+            }
         }
     }
 }
