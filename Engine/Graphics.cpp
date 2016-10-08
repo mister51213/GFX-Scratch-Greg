@@ -291,15 +291,34 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
     int distanceX = end.x - start.x;
     int distanceY = end.y - start.y;
 
+        int y2;
+        int y1;
+        int x2;
+        int x1;
+
     // for shallow slope ~ 45 degrees
     if (abs(distanceY) < abs(distanceX))
     {
+        if (start.x > end.x) // swap values to swap looping order
+        {
+            y2 = start.y;
+            y1 = end.y;
+            x2 = start.x;
+            x1 = end.x;
+        }
+        else
+        {
+            y2 = end.y;
+            y1 = start.y;
+            x2 = end.x;
+            x1 = start.x;
+        }
         // calculate slope
         float slope = (float)distanceY / (float)distanceX;
         //calculate y intercepts(b)
-        float b = start.y - start.x * slope;
+        float b = y1 - x1 * slope;
 
-        for (int x = start.x; x < end.x; x++)
+        for (int x = x1; x < x2; x++)
         {
             int y = (float)x*slope + b + 0.5f;
             // clip drawing to screen
@@ -309,13 +328,8 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
             }
         }
     }    
-    else // whne y > x; for steep slope ~ 45 degrees
+    else // when y > x; for steep slope ~ 45 degrees
     {
-        int y2;
-        int y1;
-        int x2;
-        int x1;
-
         if (start.y > end.y) // swap values to swap looping order
         {
             y2 = start.y;
@@ -332,7 +346,7 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
         }
 
         float slope = (float)distanceX / (float)distanceY;
-        float b = start.x - start.y * slope;
+        float b = x1 - y1 * slope;
 
         for (int y = y1; y <= y2; y++)
         {
