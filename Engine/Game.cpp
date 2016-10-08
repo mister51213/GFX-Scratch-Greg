@@ -50,15 +50,15 @@ float L3P1 = 0.0f;
 /*************  3D Polygons  ********************/
 float orientation = 0.0f;
 float accelFactor = 0.0f;
-const float dstTet1 = 0.01f; // CANNOT BE 0!
+const float dstTet1 = .10f; // CANNOT BE 0!
 
 // tetrahedron
 const vector3 offset1 = { .0f,.0f,.0f };
 tetrahedron tetra1 = 
-    {{0.f+offset1.x,100.9f+offset1.y,0.f+offset1.z},
-    { 0.f+offset1.x,-54.f+offset1.y,115.f+offset1.z}, 
-    { -100.f+offset1.x,-54.f+offset1.y,-58.f+offset1.z}, 
-    { 100.f+offset1.x,-54.f+offset1.y,-58.f+offset1.z}};
+    {{0.f+offset1.x,1009.f+offset1.y,0.f+offset1.z},
+    { 0.f+offset1.x,-540.f+offset1.y,1150.f+offset1.z}, 
+    { -1000.f+offset1.x,-540.f+offset1.y,-580.f+offset1.z}, 
+    { 1000.f+offset1.x,-540.f+offset1.y,-580.f+offset1.z}};
 
 tetrahedron tetraRotated;
 
@@ -140,8 +140,7 @@ void Game::CalculateBaryCentricCoordinates(
 }
 
 void Game::CalculateScanLineCoordinates()
-{
-}
+{}
 
 vector4 Game::ProjectionMatrix(const float matrix[4][4], const vector3& vecIn)
 {
@@ -240,11 +239,10 @@ void Game::DrawTriangleScanLine(const triangle2D triangle, Color color)
     {
         for (int i = triangle.v1.x; i < triangle.v2.x; i++)
         {
-            int y = i*slope21 + b21;
+            int y = (float)i*slope21 + b21 + 0.5f;
 
             if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
             {
-
                 gfx.PutPixel(i, y, Colors::White);
             }
         }
@@ -254,11 +252,10 @@ void Game::DrawTriangleScanLine(const triangle2D triangle, Color color)
     {
         for (int i = triangle.v2.x; i < triangle.v3.x; i++)
         {
-            int y = i*slope32 + b32;
+            int y = (float)i*slope32 + b32 + 0.5f;
 
             if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
             {
-
                 gfx.PutPixel(i, y, Colors::White);
             }
         }
@@ -268,11 +265,10 @@ void Game::DrawTriangleScanLine(const triangle2D triangle, Color color)
     {
         for (int i = triangle.v3.x; i < triangle.v1.x; i++)
         {
-            int y = i*slope13 + b13;
+            int y = (float)i*slope13 + b13 + 0.5f;
 
             if (i > 0 && i < gfx.ScreenWidth && y > 0 && y < gfx.ScreenHeight)
             {
-
                 gfx.PutPixel(i, y, Colors::White);
             }
         }
@@ -494,6 +490,9 @@ void Game::ComposeFrame()
         for each(triangle2D t in tRList2D)
     {
         //DrawTriOutline(t, Colors::Yellow);
-            DrawTriangleScanLine(t, Colors::Yellow);
+//            DrawTriangleScanLine(t, Colors::Yellow);
+            gfx.DrawLine(t.v1, t.v2, Colors::Yellow);
+                        gfx.DrawLine(t.v2, t.v3, Colors::Red);
+                                    gfx.DrawLine(t.v3, t.v1, Colors::Blue);
     }
 }

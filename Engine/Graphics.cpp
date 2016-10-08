@@ -284,3 +284,40 @@ void Graphics::PutPixel( int x,int y,Color c )
 	assert( y < int( Graphics::ScreenHeight ) );
 	pSysBuffer[Graphics::ScreenWidth * y + x] = c;
 }
+
+void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
+{
+
+    int distanceX = end.x - start.x;
+    int distanceY = end.y - start.y;
+
+    // for shallow lines up to 45 degrees
+    if (abs(distanceY) < abs(distanceX))
+    {
+        // calculate slope
+        float slope = (float)distanceY / (float)distanceX;
+        //calculate y intercepts(b)
+        float b = start.y - start.x * slope;
+
+        for (int x = start.x; x < end.x; x++)
+        {
+            int y = (float)x*slope + b + 0.5f;
+            // clip drawing to screen
+            if (x > 0 && x < ScreenWidth && y > 0 && y < ScreenHeight)
+            {
+                PutPixel(x, y, c);
+            }
+        }
+    }    
+    else // for steep lines down to 45 degrees
+    {
+        float slope = (float)distanceX / (float)distanceY;
+        float b = start.x - start.y * slope;
+        for (int y = start.y; y <= end.y; y++)
+        {
+            int x = slope * y + b;     
+            if (x > 0 && x < ScreenWidth && y > 0 && y < ScreenHeight)
+            PutPixel(x, y, c);
+        }
+    }
+}

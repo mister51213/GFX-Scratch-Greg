@@ -2,6 +2,8 @@
 #include <d3d11.h>
 #include <wrl.h>
 #include "Colors.h"
+#include "VectorMath.h"
+
 
 class Graphics
 {
@@ -23,6 +25,7 @@ public:
 		PutPixel( x,y,{ unsigned char( r ),unsigned char( g ),unsigned char( b ) } );
 	}
 	void PutPixel( int x,int y,Color c );
+    void DrawLine(const vector2& start, const vector2& end, Color c);
 	~Graphics();
 private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain>				pSwapChain;
