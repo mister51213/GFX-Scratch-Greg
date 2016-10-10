@@ -22,12 +22,8 @@
 
 #include "Keyboard.h"
 #include "Mouse.h"
-#include "Graphics.h"
 #include <fstream>
-#include "VectorMath.h"
-#include <vector>
-
-using namespace std;
+#include "Graphics.h"
 
 class Game
 {
@@ -36,27 +32,11 @@ public:
 	Game( const Game& ) = delete;
 	Game& operator=( const Game& ) = delete;
 	void Go();
+    void DoInput();
 private:
-    vector<vector3> Translate(vector<vector3>& vertices, vector3 & worldPosition);
     void ComposeFrame();
 	void UpdateModel();
-    void CalculateBaryCentricCoordinates(vector2 desiredPt, vector2 a, vector2 b, vector2 c, float & lambda1, float & lambda2, float & lambda3);
-    void CalculateScanLineCoordinates();
-    vector4 ProjectionMatrix(const float matrix[4][4], const vector3 & vecIn);
-    vector<triangle3D> GetTriangleList(tetrahedron polygon);
-    void DrawTriangle(const triangle2D triangle, Color color);
-    void DrawTriangleScanLine(const triangle2D triangle, Color color);
-    void DrawTriOutline(const triangle2D triangle, Color color);
-    vector2 Rotate2D(vector2& vec, float theta);
-    vector3 Rotate3D(vector3 & vec, const float& theta, char axis);
 
-    vector3 Rotate3DALT(vector3 & vec, const float & theta, char axis);
-
-    //vector3 Rotate3DX(vector3 & vec, float theta);
-
-    //vector3 Rotate3DY(vector3 & vec, float theta);
-
-    vector2 ProjectPt(vector3 & vec, float distance);
 
     /****************************************
             Operator Overloads   
@@ -67,7 +47,7 @@ private:
 	/********************************/
 private:
 	MainWindow& wnd;
-	Graphics gfx;
+	Graphics m_gfx;
 	/********************************/
 	/*  User Variables              */
 	int m_x = 0;

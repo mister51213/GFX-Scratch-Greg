@@ -3,6 +3,7 @@
 #include "ChiliException.h"
 #include <assert.h>
 #include <string>
+
 // Ignore the intellisense error "cannot open source file" for .shh files.
 // They will be created during the build sequence before the preprocessor runs.
 namespace FramebufferShaders
@@ -276,6 +277,10 @@ void Graphics::BeginFrame()
 	memset( pSysBuffer,0u,sizeof( Color ) * Graphics::ScreenHeight * Graphics::ScreenWidth );
 }
 
+    /**********************************
+    ******* ESSENTIAL FUNCTIONS *******
+    ***********************************/
+
 void Graphics::PutPixel( int x,int y,Color c )
 {
 	assert( x >= 0 );
@@ -360,3 +365,353 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
         }
     }
 }
+
+
+vector3 Graphics::Rotate3D(vector3& vec, const float& theta, char axis)
+{
+    if (axis == 'Z')
+        // Compose rotation matrix for rotation about Z axis
+    {
+        float matZ[3][3] =
+        { { cos(theta), sin(theta), 0.0f },
+          { -sin(theta), cos(theta),  0.0f },
+          { 0.0f,       0.0f,        1.0f } };
+
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matZ, vec);
+    }
+
+    if (axis == 'X')
+    {
+        float matX[3][3] =
+        { { 1.0f, 0.0f, 0.0f },
+          { 0.0f, cos(theta), -sin(theta)},
+          { 0.0f, sin(theta), cos(theta)} };
+
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matX, vec);
+    }
+
+    if (axis == 'Y')
+    {
+        // Compose rotation matrix for rotation about Z axis
+        float matZ[3][3] =
+        { { cos(theta), 0.0f, sin(theta)},
+          { 0.0f, 1.0f, 0.0f },
+          { -sin(theta), 0.0f, cos(theta)} };
+
+        // multiply by point vector to get transformed point
+        vec= MatVecMult3D(matZ, vec);
+    }
+    else
+        return vec;
+}
+
+vector2 Graphics::ProjectPt(vector3& vecIn, float distScreen, float nearP, float farP)
+{
+    ////// get reciprocal of distance
+    //float DR = distance;
+    //// column major
+    //float matP[4][4] =
+    //{ { 1.f, 0.f, 0.f, 0.f },
+    //  { 0.f, 1.f, 0.f, 0.f },
+    //  { 0.f, 0.f, 1.f, 0.f },
+    //  { 0.f, 0.f, DR, 0.f } };
+    //vector4 vecPadded = { vecIn.x, vecIn.y, vecIn.z, 1.f};
+    //vector4 projectedV = MatVecMult4D(matP, vecPadded);
+    //vector2 pVFinal;
+    //if (projectedV.w != 0.0f) // protect from divide by zero
+    //{
+    //    pVFinal = { projectedV.x / projectedV.w,projectedV.y / projectedV.w/*, projectedV.z / projectedV.w */};
+    //}
+    //else
+    //{
+    //    pVFinal = { projectedV.x / 0.001f,projectedV.y / 0.001f/*, projectedV.z / 0.001f */};
+    //}
+    //return{ pVFinal.x,pVFinal.y };
+
+    /******************ALTERNATIVE WAY*************************
+    http://www.codinglabs.net/article_world_view_projection_matrix.aspx
+    ***********************************************************/        
+//    float diff = farP - nearP;
+//    float sum = farP + nearP;
+//
+//        float matP[4][4] =
+//    { { 1.f/10.0f, 0.f, 0.f, 0.f },
+//      { 0.f, 1.f/10.0f, 0.f, 0.f },
+//      { 0.f, 0.f, -(2.f/diff), -(sum/diff) },
+//      { 0.f, 0.f, 0.0f, 1.f } };
+//
+//vector4 vecPadded = { vecIn.x, vecIn.y, vecIn.z, 1.f};
+//vector4 projectedV = MatVecMult4D(matP, vecPadded);
+//vector2 pVFinal = { projectedV.x / projectedV.z, projectedV.y / projectedV.z/*, projectedV.z / 0.001f */};
+//
+//return pVFinal;
+    // ORTHAGONAL PROJECTION METHOD
+    // TODO: separate this equation into steps, 2 separate equations
+    // make sure that the PROJECTION side (distance to Screen)
+    // and physical vector side (offset) are being calculated independently
+
+    return
+    {
+        (vecIn.x/vecIn.z)*distScreen,
+        (vecIn.y/vecIn.z)*distScreen};
+}
+
+vector<triangle3D> Graphics::GetTriangleList(tetrahedron polygon)
+{
+    vector<triangle3D> triList;
+    triList.push_back({ polygon.v1, polygon.v2, polygon.v3 });
+        triList.push_back({ polygon.v1, polygon.v4, polygon.v3 });
+            triList.push_back({ polygon.v1, polygon.v2, polygon.v4 });
+                 triList.push_back({ polygon.v4, polygon.v2, polygon.v3 });
+
+    return triList;
+}
+
+vector<vector3> Graphics::Translate(vector<vector3>& vertices, vector3& worldPosition)
+{
+    for each (vector3 vert in vertices)
+    {
+        vert = vert + worldPosition;
+    }
+    return vertices;
+}
+
+    /**********************************
+    ******* SPARE FUNCTIONS ***********
+    ***********************************/
+
+// Lambda1, 2, and 3 are the coefficients reprsenting how much of each points a,b,and c, goes into the point in question
+void Graphics::CalculateBaryCentricCoordinates( vector2 desiredPt, vector2 a, vector2 b, vector2 c, float& lambda1, float& lambda2, float& lambda3)
+{
+    lambda1 = ((b.y - c.y)*(desiredPt.x - c.x) + (c.x - b.x)*(desiredPt.y - c.y))/
+        ((b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y));
+
+    lambda2 = ((c.y - a.y)*(desiredPt.x - c.x) + (a.x - c.x)*(desiredPt.y - c.y))/
+        ((b.y - c.y)*(a.x - c.x) + (c.x - b.x)*(a.y - c.y));
+
+    lambda3 = 1.0f - lambda1 - lambda2;
+}
+
+void Graphics::DrawTriangle(const triangle2D& triangle, Color color)
+{
+    // Bounding box - uses temporary global variables up top
+    float left = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    float right = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    float top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    float bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    vector<lambdas> vertexLambdas;
+
+    for (int j = top; j <= bottom; j++)
+    {
+        for (int i = left; i <= right; i++)
+        {
+            if (i > 0 && i < ScreenWidth&&j>0 && j < ScreenHeight)
+            {
+                CalculateBaryCentricCoordinates({ (float)i,(float)j }, triangle.v1, triangle.v2, triangle.v3, lambda1, lambda2, lambda3);
+
+                if (lambda1 >= 0.0f && lambda2 >= 0.0f && lambda3 >= 0.0f)
+                {
+                    L1P2 = lambda1 + lambda2;
+                    L2P3 = lambda2 + lambda3;
+                    L3P1 = lambda3 + lambda1;
+
+                    //if (L1P2 >= .98f && L1P2 <= 1.02f ||
+                    //    L2P3 >= .98f && L2P3 <= 1.02f ||
+                    //    L3P1 >= .98f && L3P1 <= 1.02f)
+                    //    gfx.PutPixel(i, j, Colors::Yellow);
+                    //else
+                        PutPixel(i, j, color);
+                }
+            }
+            // Draw Outline
+            //float L1P2 = lambda1 + lambda2;
+            //float L2P3 = lambda2 + lambda3;
+            //float L3P1 = lambda3 + lambda1;
+            //if (L1P2 >= .98f && L1P2 <= 1.02f ||
+            //    L2P3 >= .98f && L2P3 <= 1.02f ||
+            //    L3P1 >= .98f && L3P1 <= 1.02f)
+            //{
+            //    //Color color(Colors::MakeRGB(i, j, 255));
+            //    gfx.PutPixel(i, j, Colors::Red);
+            //}
+        }
+    }
+}
+
+void Graphics::DrawTriOutline(const triangle2D triangle, Color color)
+{
+    // coordinate coefficients
+    float lambda1 = 0.0f;
+    float lambda2 = 0.0f;
+    float lambda3 = 0.0f;
+
+    //TODO: find a way to recycle this between outline and fill functions w/o clashing
+    // Bounding box - use precalculated vars up top from fill algorithm
+    leftSide = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    rightSide = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    for (int j = top; j < bottom; j++)
+    {
+        for (int i = leftSide; i < rightSide; i++)
+        {
+            if (i > 0 && i < ScreenWidth&&j>0 && j < ScreenHeight)
+            {
+                CalculateBaryCentricCoordinates({ (float)i,(float)j }, triangle.v1, triangle.v2, triangle.v3, lambda1, lambda2, lambda3);
+                //validate Barycentric coordinates and draw if on lines
+                if (lambda1 >= 0.0f && lambda2 >= 0.0f && lambda3 >= 0.0f)
+                {
+                    L1P2 = lambda1 + lambda2;
+                    L2P3 = lambda2 + lambda3;
+                    L3P1 = lambda3 + lambda1;
+
+                    if (L1P2 >= .995f && L1P2 <= 1.005f ||
+                        L2P3 >= .995f && L2P3 <= 1.005f ||
+                        L3P1 >= .995f && L3P1 <= 1.005f)
+                    {
+                        PutPixel(i, j, color);
+                    }
+                }
+            }
+        }
+    }
+}
+
+vector2 Graphics::Rotate2D(vector2& vec, float theta)
+{
+    // Compose rotation matrix
+    float matrix[2][2] =
+    {   {cos(theta), -sin(theta)},
+        {sin(theta),  cos(theta)}
+    };
+
+    // multiply by point vector to get transformed point
+    //return matrix*vec;
+    return MatVecMult2D(matrix, vec);
+}
+
+    /**********************************
+    ******* NON-WORKING *********
+    ***********************************/
+//vector3 Rendering::Rotate3DALT(vector3& vec, const float& theta, char axis)
+//{
+//        float matX[3][3] =
+//        { { 1.0f, 0.0f, 0.0f },
+//        { 0.0f, cos(theta), -sin(theta)},
+//        { 0.0f, sin(theta), cos(theta)} };
+//
+//        float matY[3][3] =
+//        { { cos(theta), 0.0f, sin(theta)},
+//        { 0.0f, 1.0f, 0.0f },
+//        { -sin(theta), 0.0f, cos(theta)} };
+//
+//        float matZ[3][3] =
+//        { { cos(theta), -sin(theta), 0.0f },
+//        { sin(theta), cos(theta),  0.0f },
+//        { 0.0f,       0.0f,        1.0f } };
+//
+//        float matResult[3][3];
+//
+//        if (axis == 'X')
+//        {
+//        }
+//        if (axis == 'Y')
+//        {
+//        }
+//        if (axis == 'Z')
+//        {
+//        }
+//
+//    Mat3Concat(matResult[0], matY, matX);
+//    Mat3Concat(matResult[0], matZ, matY);
+//
+//    // Z Matrix now CONTAINS Concatenated rotation value
+//    vec = MatVecMult3D(matResult, vec);
+//    return vec;
+//}
+
+vector4 Graphics::ProjectionMatrix(const float matrix[4][4], const vector3& vecIn)
+{
+    float halfHeight = ScreenHeight*0.5f;
+    float halfWidth = ScreenWidth*0.5f;
+    vector4 vec4 = { vecIn.x,vecIn.y,vecIn.z,1.0f };
+    return vec4;
+}
+
+void Graphics::DrawTriangleScanLine(const triangle2D triangle, Color color)
+{
+    // Bounding box - use precalculated vars up top from fill algorithm
+    //leftSide = min({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    //rightSide = max({ triangle.v1.x,triangle.v2.x, triangle.v3.x });
+    //top = min({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+    //bottom = max({ triangle.v1.y,triangle.v2.y, triangle.v3.y });
+
+    // calculate slopes
+    float slope21 = (triangle.v2.y - triangle.v1.y) / (triangle.v2.x - triangle.v1.x);
+    float slope32 = (triangle.v3.y - triangle.v2.y) / (triangle.v3.x - triangle.v2.x);
+    float slope13 = (triangle.v1.y - triangle.v3.y) / (triangle.v1.x - triangle.v3.x);
+
+    //calculate y intercepts(b):
+    // y = mx + b
+    // b = y - mx
+    float b21 = triangle.v1.y - triangle.v1.x*slope21;
+    float b32 = triangle.v2.y - triangle.v2.x*slope32;
+    float b13 = triangle.v3.y - triangle.v3.x*slope13;
+
+    // line by line method
+    for (int j = triangle.v1.y ; j < triangle.v2.y; j++)
+    {
+        for (int i = triangle.v1.x; i < triangle.v2.x; i++)
+        {
+            int y = (float)i*slope21 + b21 + 0.5f;
+
+            if (i > 0 && i < ScreenWidth && y > 0 && y < ScreenHeight)
+            {
+                PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+
+        for (int j = triangle.v2.y ; j < triangle.v3.y; j++)
+    {
+        for (int i = triangle.v2.x; i < triangle.v3.x; i++)
+        {
+            int y = (float)i*slope32 + b32 + 0.5f;
+
+            if (i > 0 && i < ScreenWidth && y > 0 && y < ScreenHeight)
+            {
+                PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+
+      for (int j = triangle.v3.y ; j < triangle.v1.y; j++)
+    {
+        for (int i = triangle.v3.x; i < triangle.v1.x; i++)
+        {
+            int y = (float)i*slope13 + b13 + 0.5f;
+
+            if (i > 0 && i < ScreenWidth && y > 0 && y < ScreenHeight)
+            {
+                PutPixel(i, y, Colors::White);
+            }
+        }
+    }
+}
+
+
+// TODO: fix winding order and redundancies
+// TODO: make this recycle same barycentric coordinates from triangle fill function
+// TODO: that makes it go MUCH faster, but the issue is that the outlines wont appear
+//       in that case because it finishes drawing the triangle before moving onto the
+//       outline draw function, so the barycentric coordinates are invalid by that stage.
+
+//TODO: MAKE SCANLINE DRAWING ALGORITHM for triangle
+//TODO: Right now its drawing more triangles than it needs to;
+// In the triangle list, it's drawing a separate triangle for every
+// one in the list, duplicating vertices. Fix the triangle winding
+// order to avoid this problem.

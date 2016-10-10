@@ -16,6 +16,11 @@ struct vector4
     float x, y, z, w;
 }; 
 
+struct bounds
+{
+    float left, right, top, bottom;
+};
+
 struct quaternion
 {
     float w, x, y, z;
