@@ -34,6 +34,7 @@ void Game::Go() // infinite loop
 {
 	m_gfx.BeginFrame(); // clears the screen	
 	UpdateModel(); // game logic only
+    DoInput();
     ComposeFrame(); // render instantaneous frame
 	m_gfx.EndFrame(); // swap buffer - present frame
 }
@@ -43,143 +44,125 @@ void Game::DoInput()
     // ACCELERATE AND DECELERATE ROTATION
     if (wnd.kbd.KeyIsPressed(VK_END))
     {
-    accelFactor = 0.0f;
-    orientation = 0.0f;
+    m_poly.accelFactor = 0.0f;
+    m_poly.orientation = 0.0f;
     }
 
     if (wnd.kbd.KeyIsPressed(VK_SPACE))
-    accelFactor += 0.0001;
+    m_poly.accelFactor += 0.0001;
     if(wnd.kbd.KeyIsPressed(VK_CONTROL))
-    accelFactor -= 0.0001;
+    m_poly.accelFactor -= 0.0001;
 
     // PITCH UP
     if (wnd.kbd.KeyIsPressed(VK_UP))
     {
-    orientation += accelFactor;
-    axis = 'X';
+    m_poly.orientation += m_poly.accelFactor;
+    m_gfx.rotationAxis = 'X';
     }
 
     // PITCH DOWN
     else if (wnd.kbd.KeyIsPressed(VK_DOWN))
     {
-    orientation -= accelFactor;
-    axis = 'X';
+    m_poly.orientation -= m_poly.accelFactor;
+    m_gfx.rotationAxis = 'X';
     }
 
     // YAW LEFT
     if (wnd.kbd.KeyIsPressed(VK_LEFT))
     {
-    orientation -= accelFactor;
-    axis = 'Y';
+    m_poly.orientation -= m_poly.accelFactor;
+    m_gfx.rotationAxis = 'Y';
     }
 
     // YAW RIGHT
     if (wnd.kbd.KeyIsPressed(VK_RIGHT))
     {
-    orientation += accelFactor;
-    axis = 'Y';
+    m_poly.orientation +=m_poly. accelFactor;
+    m_gfx.rotationAxis = 'Y';
     }
 
     // ROLL RIGHT
     if (wnd.kbd.KeyIsPressed('Q'))
     {
-    orientation += accelFactor;
-    axis = 'Z';
+    m_poly.orientation += m_poly.accelFactor;
+    m_gfx.rotationAxis = 'Z';
     }
 
     // ROLL LEFT
     if (wnd.kbd.KeyIsPressed('E'))
     {
-    orientation -= accelFactor;
-    axis = 'Z';
+    m_poly.orientation -= m_poly.accelFactor;
+    m_gfx.rotationAxis = 'Z';
     }
     
    // change distance to screen
    if (wnd.kbd.KeyIsPressed('S'))
    {
-       nearPln += 0.001f;
-       farPln += 0.001f;
+       changeNearPln(m_gfx,0.001f);
+       changeFarPln(m_gfx,0.001f);
 
        //if (distToScreen == -0.001)
        //distToScreen += 0.0025f;
        //else
-       distToScreen += 5.f;
+       changeLensToScrn(m_gfx,5.f);
    }      
        
        if (wnd.kbd.KeyIsPressed('W'))
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
+       changeNearPln(m_gfx,-0.001f);
+       changeFarPln(m_gfx,-0.001f);
 
        //if(distToScreen==0.001)
        //distToScreen -= 0.0025f;
        //else
-       distToScreen -= 5.f;
+       changeLensToScrn(m_gfx,-5.f);
    }
 
-   // move polygon
+   // move polyhedron
    if (wnd.kbd.KeyIsPressed('U')) // move away from it
    {
-       nearPln += 0.001f;
-       farPln += 0.001f;
-
        //if (offset1.z == -0.001)
        //offset1.z += 0.0025f;
        //else
-       offset1.z += 5.f;
+       m_poly.offset1.z += 5.f;
    }      
        
    if (wnd.kbd.KeyIsPressed('T')) // move toward it
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
-
        //if(offset1.z==0.001)
        //offset1.z -= 0.0025f;
        //else
-       offset1.z -= 5.f;
+       m_poly.offset1.z -= 5.f;
    }
 
    if (wnd.kbd.KeyIsPressed('G')) // move it right
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
-
        //if(offset1.z==0.001)
        //offset1.z -= 0.0025f;
        //else
-       offset1.x -= 5.f;
+       m_poly.offset1.x -= 5.f;
    }
 
    if (wnd.kbd.KeyIsPressed('J')) // move it left
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
-
        //if(offset1.z==0.001)
        //offset1.z -= 0.0025f;
        //else
-       offset1.x += 5.f;
+       m_poly.offset1.x += 5.f;
    }
       if (wnd.kbd.KeyIsPressed('Y')) // move it up
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
-
        //if(offset1.z==0.001)
        //offset1.z -= 0.0025f;
        //else
-       offset1.y += 5.f;
+       m_poly.offset1.y += 5.f;
    }
          if (wnd.kbd.KeyIsPressed('H')) // move it down
    {
-       nearPln -= 0.001f;
-       farPln -= 0.001f;
-
        //if(offset1.z==0.001)
        //offset1.z -= 0.0025f;
        //else
-       offset1.y -= 5.f;
+       m_poly.offset1.y -= 5.f;
    }
 
     if (wnd.kbd.KeyIsPressed(VK_ESCAPE))
@@ -256,18 +239,18 @@ void Game::ComposeFrame()
     //DrawTriangle(t1R3, Colors::White);
 
     // ROTATE
-    m_gfx.Rotate3D(tetra1.v1, orientation, axis);
-    m_gfx.Rotate3D(tetra1.v2, orientation, axis);
-    m_gfx.Rotate3D(tetra1.v3, orientation, axis);
-    m_gfx.Rotate3D(tetra1.v4, orientation, axis);
+    m_gfx.Rotate3D(m_poly.m_tetra.v1, m_poly.orientation, m_gfx.rotationAxis);
+    m_gfx.Rotate3D(m_poly.m_tetra.v2, m_poly.orientation, m_gfx.rotationAxis);
+    m_gfx.Rotate3D(m_poly.m_tetra.v3, m_poly.orientation, m_gfx.rotationAxis);
+    m_gfx.Rotate3D(m_poly.m_tetra.v4, m_poly.orientation, m_gfx.rotationAxis);
 
     // OFFSET (TRANSLATE) the object relative to world space
     tetrahedron tetraTrans =
     {
-    tetra1.v1 + offset1,
-    tetra1.v2 + offset1,
-    tetra1.v3 + offset1,
-    tetra1.v4 + offset1 
+    m_poly.m_tetra.v1 + m_poly.offset1,
+    m_poly.m_tetra.v2 + m_poly.offset1,
+    m_poly.m_tetra.v3 + m_poly.offset1,
+    m_poly.m_tetra.v4 + m_poly.offset1 
     };
 
     // get triangle lists
@@ -278,15 +261,17 @@ void Game::ComposeFrame()
     {
         tRList2D.push_back(
         { 
-            m_gfx.ProjectPt(t.v1,distToScreen, nearPln, farPln),
-            m_gfx.ProjectPt(t.v2,distToScreen,nearPln, farPln),
-            m_gfx.ProjectPt(t.v3,distToScreen,nearPln, farPln)});
+            // TODO: Why are these holding custom distance to screen values?
+            // Isn't distance from lens to screen UNIFORM????
+            m_gfx.ProjectPt(t.v1),
+            m_gfx.ProjectPt(t.v2),
+            m_gfx.ProjectPt(t.v3)});
     }
     for (int i = 0; i < tRList2D.size(); i++)
     {
-        tRList2D[i].v1 = tRList2D[i].v1 + transToScrn;
-        tRList2D[i].v2 = tRList2D[i].v2 + transToScrn;
-        tRList2D[i].v3 = tRList2D[i].v3 + transToScrn;
+        tRList2D[i].v1 = m_gfx.TransToScreen(tRList2D[i].v1);
+        tRList2D[i].v2 = m_gfx.TransToScreen(tRList2D[i].v2);
+        tRList2D[i].v3 = m_gfx.TransToScreen(tRList2D[i].v3);
     }
 
     for each(triangle2D t in tRList2D)

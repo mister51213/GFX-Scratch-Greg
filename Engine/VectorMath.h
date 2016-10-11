@@ -112,6 +112,9 @@ static vector2 operator * (float matrix[2][2], vector2 vecIn)
     return vecOut;
 }
 
+// Initialize quaternion base rotation to 0
+//quaternion totalRotation = { 1.f, 0.f, 0.f, 0.f };
+
 // Quaternion multiplication operator (NOT COMMUTATIVE!)
 static quaternion operator * (quaternion Q1, quaternion Q2)
 {

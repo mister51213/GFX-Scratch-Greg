@@ -21,71 +21,41 @@ using namespace std;
 // EXPEDIENT VARIABLES //
 //////////////////////
 
-float scrnWHalf = Graphics::ScreenWidth * 0.5f;
-float scrnHHalf = Graphics::ScreenHeight * 0.5f;
-vector2 transToScrn = {scrnWHalf, scrnHHalf};
-
-
-//********* TEMPORARY VARIABLE HOLDERS ***********//
-float leftSide;
-float rightSide;
-float top;
-float bottom;
-
-float lambda1 = 0.0f;
-float lambda2 = 0.0f;
-float lambda3 = 0.0f;
-
-float L1P2 = 0.0f;
-float L2P3 = 0.0f;
-float L3P1 = 0.0f;
-
-// TODO: Make WORLD offset (up here only defines local object space offset)
+// TODO: Move these into rigid body object class
 /*************  3D Polygons  ********************/
-float orientation = 0.0f;
-float accelFactor = 0.0f;
-
-float nearPln = 50.f;
-float farPln = 100.f;
+//float orientation = 0.0f;
+//float accelFactor = 0.0f;
 
 /******************************************
 ***************TEST VALUES*************** for tetrahedron
 ******************************************/
-float distToScreen = 500.0f; // CANNOT BE 0!
-
-vector3 offset1 = { .0f,.0f,5.0f };
-
-vector3 displacement = { 0.0f,0.0f,0.0f };
-
+//vector3 offset1 = { .0f,.0f,5.0f };
+//vector3 displacement = { 0.0f,0.0f,0.0f };
 /******************************************
 ***************TEST VALUES*************** for tetrahedron
 ******************************************/
 
 // TODO: add this offset between rotation and display
-tetrahedron tetra1 = 
-    {{0.f, 109.f, 0.f},
-    { 0.f, -54.f, 115.f}, 
-    { -100.f,-54.f,-58.f}, 
-    { 100.f,-54.f,-58.f}};
+//tetrahedron tetra1 = 
+//    {{0.f, 109.f, 0.f},
+//    { 0.f, -54.f, 115.f}, 
+//    { -100.f,-54.f,-58.f}, 
+//    { 100.f,-54.f,-58.f}};
 
-tetrahedron tetraRotated = tetra1;
+// TODO: make sure you dont get same problem as before here w infinite rotation
+//tetrahedron tetraRotated = tetra1;
 
-char axis = 'X';
-
-cube cube1 =
-// front face
-{ {200,200,0},
-{ 200,300,0},
-{ 300,200,0},
-{ 300,300,0},
-// back face
-{ 200,200,100},
-{ 200,300,100},
-{ 300,200,100},
-{ 300,300,100} };
-
-// Initialize quaternion base rotation to 0
-quaternion totalRotation = { 1.f, 0.f, 0.f, 0.f };
+//cube cube1 =
+//// front face
+//{ {200,200,0},
+//{ 200,300,0},
+//{ 300,200,0},
+//{ 300,300,0},
+//// back face
+//{ 200,200,100},
+//{ 200,300,100},
+//{ 300,200,100},
+//{ 300,300,100} };
 
 class Graphics
 {
@@ -110,7 +80,7 @@ public:
     ******* ESSENTIAL FUNCTIONS *******
     ***********************************/
     vector3 Rotate3D(vector3 & vec, const float& theta, char axis);
-    vector2 ProjectPt(vector3 & vec, float distance, float near, float far);
+    vector2 ProjectPt(vector3 & vec);
     vector<triangle3D> GetTriangleList(tetrahedron polygon);
 
     vector<vector3> Translate(vector<vector3>& vertices, vector3& worldPosition);
@@ -136,6 +106,12 @@ public:
 	void PutPixel( int x,int y,Color c );
     void DrawLine(const vector2& start, const vector2& end, Color c);
 
+    vector2 TransToScreen(const vector2& vecIn);
+    
+    friend void changeNearPln( Graphics& gfx, const float& amt);
+    friend void changeFarPln( Graphics& gfx, const float& amt);
+    friend void changeLensToScrn(Graphics& gfx, const float& amt);
+
 	~Graphics();
 private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain>				pSwapChain;
@@ -151,7 +127,29 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			pSamplerState;
 	D3D11_MAPPED_SUBRESOURCE							mappedSysBufferTexture;
 	Color*                                              pSysBuffer = nullptr;
+
+    float scrnWHalf = Graphics::ScreenWidth * 0.5f;
+    float scrnHHalf = Graphics::ScreenHeight * 0.5f;
+    vector2 transToScrn = {scrnWHalf, scrnHHalf};
+
+    // Temprorary holders For barycentric calculations
+    float lambda1 = 0.0f;
+    float lambda2 = 0.0f;
+    float lambda3 = 0.0f;
+
+    float L1P2 = 0.0f;
+    float L2P3 = 0.0f;
+    float L3P1 = 0.0f;
+
+    ///////////////////////////////////////////////////////////
+    ////////////// VARIABLES FOR PROJECTION ///////////////////
+    ///////////////////////////////////////////////////////////
+    float m_nearPln = 50.f;
+    float m_farPln = 100.f;
+    float m_lensToScrn = 500.0f; // CANNOT BE 0!
+
 public:
 	static constexpr unsigned int ScreenWidth = 800u;
 	static constexpr unsigned int ScreenHeight = 600u;
+    char rotationAxis = 'Z';
 };

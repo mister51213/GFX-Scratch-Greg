@@ -81,10 +81,8 @@ Graphics::Graphics( HWNDKey& key )
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating render target view on backbuffer" );
 	}
 
-
 	// set backbuffer as the render target using created view
 	pImmediateContext->OMSetRenderTargets( 1,pRenderTargetView.GetAddressOf(),nullptr );
-
 
 	// set viewport dimensions
 	D3D11_VIEWPORT vp;
@@ -95,7 +93,6 @@ Graphics::Graphics( HWNDKey& key )
 	vp.TopLeftX = 0.0f;
 	vp.TopLeftY = 0.0f;
 	pImmediateContext->RSSetViewports( 1,&vp );
-
 
 	///////////////////////////////////////
 	// create texture for cpu render target
@@ -141,7 +138,6 @@ Graphics::Graphics( HWNDKey& key )
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating pixel shader" );
 	}
 	
-
 	/////////////////////////////////////////////////
 	// create vertex shader for framebuffer
 	// Ignore the intellisense error "namespace has no member"
@@ -154,7 +150,6 @@ Graphics::Graphics( HWNDKey& key )
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating vertex shader" );
 	}
 	
-
 	//////////////////////////////////////////////////////////////
 	// create and fill vertex buffer with quad for rendering frame
 	const FSQVertex vertices[] =
@@ -195,7 +190,6 @@ Graphics::Graphics( HWNDKey& key )
 	{
 		throw CHILI_GFX_EXCEPTION( hr,L"Creating input layout" );
 	}
-
 
 	////////////////////////////////////////////////////
 	// Create sampler state for fullscreen textured quad
@@ -366,8 +360,13 @@ void Graphics::DrawLine(const vector2& start, const vector2& end, Color c)
     }
 }
 
+vector2 Graphics::TransToScreen(const vector2& vecIn)
+{
+    return vecIn + transToScrn;
+}
 
-vector3 Graphics::Rotate3D(vector3& vec, const float& theta, char axis)
+
+vector3 Graphics::Rotate3D(vector3& vec, const float& theta, char axis = 'X')
 {
     if (axis == 'Z')
         // Compose rotation matrix for rotation about Z axis
@@ -407,7 +406,7 @@ vector3 Graphics::Rotate3D(vector3& vec, const float& theta, char axis)
         return vec;
 }
 
-vector2 Graphics::ProjectPt(vector3& vecIn, float distScreen, float nearP, float farP)
+vector2 Graphics::ProjectPt(vector3& vecIn)
 {
     ////// get reciprocal of distance
     //float DR = distance;
@@ -454,8 +453,9 @@ vector2 Graphics::ProjectPt(vector3& vecIn, float distScreen, float nearP, float
 
     return
     {
-        (vecIn.x/vecIn.z)*distScreen,
-        (vecIn.y/vecIn.z)*distScreen};
+        (vecIn.x/vecIn.z)*m_lensToScrn,
+        (vecIn.y/vecIn.z)*m_lensToScrn
+    };
 }
 
 vector<triangle3D> Graphics::GetTriangleList(tetrahedron polygon)
@@ -547,6 +547,11 @@ void Graphics::DrawTriOutline(const triangle2D triangle, Color color)
     float lambda1 = 0.0f;
     float lambda2 = 0.0f;
     float lambda3 = 0.0f;
+
+    float leftSide;
+    float rightSide;
+    float top;
+    float bottom;
 
     //TODO: find a way to recycle this between outline and fill functions w/o clashing
     // Bounding box - use precalculated vars up top from fill algorithm
@@ -715,3 +720,18 @@ void Graphics::DrawTriangleScanLine(const triangle2D triangle, Color color)
 // In the triangle list, it's drawing a separate triangle for every
 // one in the list, duplicating vertices. Fix the triangle winding
 // order to avoid this problem.
+
+void changeNearPln(Graphics& gfx, const float& amt)
+{
+    gfx.m_nearPln += amt;
+}
+
+void changeFarPln(Graphics& gfx, const float& amt)
+{
+     gfx.m_farPln += amt;
+}
+
+void changeLensToScrn(Graphics& gfx, const float& amt) 
+{
+     gfx.m_lensToScrn += amt; 
+}

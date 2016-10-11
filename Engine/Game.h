@@ -24,6 +24,7 @@
 #include "Mouse.h"
 #include <fstream>
 #include "Graphics.h"
+#include "Polyhedron.h"
 
 class Game
 {
@@ -37,21 +38,18 @@ private:
     void ComposeFrame();
 	void UpdateModel();
 
-
-    /****************************************
-            Operator Overloads   
-    *****************************************/
-
 	/********************************/
 	/*  User Functions              */
 	/********************************/
 private:
 	MainWindow& wnd;
 	Graphics m_gfx;
+
 	/********************************/
 	/*  User Variables              */
 	int m_x = 0;
 	int m_y = 0;
 	std::wofstream log;
+    Polyhedron m_poly;
 	/********************************/
 };
