@@ -8,7 +8,6 @@
 
 using namespace std;
 
-
 // TODO: make these all actual member variables, NOT DANGLING IN GRAPHICS HEADER!!!
 // TODO: Put them ALL in teh appropriate graphics classes! (vertex info should probably by
 // TODO: in game class, correspodnign to game objects, and more drawing specific info

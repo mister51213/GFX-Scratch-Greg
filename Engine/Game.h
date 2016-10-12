@@ -51,5 +51,7 @@ private:
 	int m_y = 0;
 	std::wofstream log;
     Polyhedron m_poly;
+    Polyhedron m_poly2;
+
 	/********************************/
 };
