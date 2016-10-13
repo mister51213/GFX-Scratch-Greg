@@ -245,71 +245,79 @@ void Game::ComposeFrame()
     m_gfx.Rotate3D(m_poly.m_tetra.v4, m_poly.orientation, m_gfx.rotationAxis);
 
     // ROTATE poly 2
-    m_gfx.Rotate3D(m_poly2.m_tetra.v1, m_poly2.orientation, m_gfx.rotationAxis);
-    m_gfx.Rotate3D(m_poly2.m_tetra.v2, m_poly2.orientation, m_gfx.rotationAxis);
-    m_gfx.Rotate3D(m_poly2.m_tetra.v3, m_poly2.orientation, m_gfx.rotationAxis);
-    m_gfx.Rotate3D(m_poly2.m_tetra.v4, m_poly2.orientation, m_gfx.rotationAxis);
+    //m_gfx.Rotate3D(m_poly2.m_tetra.v1, m_poly2.orientation, m_gfx.rotationAxis);
+    //m_gfx.Rotate3D(m_poly2.m_tetra.v2, m_poly2.orientation, m_gfx.rotationAxis);
+    //m_gfx.Rotate3D(m_poly2.m_tetra.v3, m_poly2.orientation, m_gfx.rotationAxis);
+    //m_gfx.Rotate3D(m_poly2.m_tetra.v4, m_poly2.orientation, m_gfx.rotationAxis);
 
     // OFFSET (TRANSLATE) the object relative to world space
     tetrahedron tetraTrans = {
     m_poly.m_tetra.v1 + m_poly.offset1,
     m_poly.m_tetra.v2 + m_poly.offset1,
     m_poly.m_tetra.v3 + m_poly.offset1,
-    m_poly.m_tetra.v4 + m_poly.offset1 
+    m_poly.m_tetra.v4 + m_poly.offset1
     };
 
-    tetrahedron tetraTrans2 = {
-    m_poly2.m_tetra.v1 + m_poly2.offset2,
-    m_poly2.m_tetra.v2 + m_poly2.offset2,
-    m_poly2.m_tetra.v3 + m_poly2.offset2,
-    m_poly2.m_tetra.v4 + m_poly2.offset2 
-    };
+    //tetrahedron tetraTrans2 = {
+    //m_poly2.m_tetra.v1 + m_poly2.offset2,
+    //m_poly2.m_tetra.v2 + m_poly2.offset2,
+    //m_poly2.m_tetra.v3 + m_poly2.offset2,
+    //m_poly2.m_tetra.v4 + m_poly2.offset2 
+    //};
 
     // TODO: make just one big triangle draw list 
     // get triangle lists
     vector<triangle3D> tRList3D = m_gfx.GetTriangleList(tetraTrans);
     vector<triangle2D> tRList2D;
 
-    vector<triangle3D> tRList3D2 = m_gfx.GetTriangleList(tetraTrans2);
-    vector<triangle2D> tRList2D2;
+    //vector<triangle3D> tRList3D2 = m_gfx.GetTriangleList(tetraTrans2);
+    //vector<triangle2D> tRList2D2;
 
+    // PROJECT ALL POINTS
+    for (triangle3D &t : tRList3D)
+    {
+        t.v1 = m_gfx.ProjectPt(t.v1);
+        t.v2 = m_gfx.ProjectPt(t.v2);
+        t.v3 = m_gfx.ProjectPt(t.v3);
+    }
 
     for each(triangle3D t in tRList3D)
     {
-        tRList2D.push_back({ 
-            // TODO: Why are these holding custom distance to screen values?
-            // Isn't distance from lens to screen UNIFORM????
-            m_gfx.ProjectPt(t.v1),
-            m_gfx.ProjectPt(t.v2),
-            m_gfx.ProjectPt(t.v3)});
-    }
-    for each(triangle3D t in tRList3D2)
-    {
-        tRList2D.push_back({ 
-            m_gfx.ProjectPt(t.v1),
-            m_gfx.ProjectPt(t.v2),
-            m_gfx.ProjectPt(t.v3)});
+        tRList2D.push_back({
+            {t.v1.x, t.v1.y},
+            {t.v2.x, t.v2.y},
+            {t.v3.x, t.v3.y} });
     }
 
-    for (int i = 0; i < tRList2D.size(); i++)
-    {
-        tRList2D[i].v1 = m_gfx.TransToScreen(tRList2D[i].v1);
-        tRList2D[i].v2 = m_gfx.TransToScreen(tRList2D[i].v2);
-        tRList2D[i].v3 = m_gfx.TransToScreen(tRList2D[i].v3);
-    }
-    for (int i = 0; i < tRList2D2.size(); i++)
-    {
-        tRList2D2[i].v1 = m_gfx.TransToScreen(tRList2D2[i].v1);
-        tRList2D2[i].v2 = m_gfx.TransToScreen(tRList2D2[i].v2);
-        tRList2D2[i].v3 = m_gfx.TransToScreen(tRList2D2[i].v3);
-    }
+        //for each(triangle3D t in tRList3D2)
+        //{
+        //    tRList2D.push_back({ 
+        //        m_gfx.ProjectPt(t.v1),
+        //        m_gfx.ProjectPt(t.v2),
+        //        m_gfx.ProjectPt(t.v3)});
+        //}
 
-    for each(triangle2D t in tRList2D){
+        for (int i = 0; i < tRList2D.size(); i++)
+        {
+            tRList2D[i].v1 = m_gfx.TransToScreen(tRList2D[i].v1);
+            tRList2D[i].v2 = m_gfx.TransToScreen(tRList2D[i].v2);
+            tRList2D[i].v3 = m_gfx.TransToScreen(tRList2D[i].v3);
+        }
+        //for (int i = 0; i < tRList2D2.size(); i++)
+        //{
+        //    tRList2D2[i].v1 = m_gfx.TransToScreen(tRList2D2[i].v1);
+        //    tRList2D2[i].v2 = m_gfx.TransToScreen(tRList2D2[i].v2);
+        //    tRList2D2[i].v3 = m_gfx.TransToScreen(tRList2D2[i].v3);
+        //}
+
+        for each(triangle2D t in tRList2D) {
             m_gfx.DrawLine(t.v1, t.v2, Colors::Yellow);
-                        m_gfx.DrawLine(t.v2, t.v3, Colors::Red);
-                                    m_gfx.DrawLine(t.v3, t.v1, Colors::Blue);}
-    for each(triangle2D t in tRList2D2){
-            m_gfx.DrawLine(t.v1, t.v2, Colors::White);
-                        m_gfx.DrawLine(t.v2, t.v3, Colors::Gray);
-                                    m_gfx.DrawLine(t.v3, t.v1, Colors::LightGray);}
+            m_gfx.DrawLine(t.v2, t.v3, Colors::Red);
+            m_gfx.DrawLine(t.v3, t.v1, Colors::Blue);
+        }
+        /*for each(triangle2D t in tRList2D2){
+                m_gfx.DrawLine(t.v1, t.v2, Colors::White);
+                            m_gfx.DrawLine(t.v2, t.v3, Colors::Gray);
+                                        m_gfx.DrawLine(t.v3, t.v1, Colors::LightGray);}*/
+    
 }
