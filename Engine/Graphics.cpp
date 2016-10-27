@@ -406,7 +406,7 @@ vector3 Graphics::Rotate3D(vector3& vec, const float& theta, char axis = 'X')
         return vec;
 }
 
-vector3 Graphics::ProjectPt(vector3& vecIn)
+vector2 Graphics::ProjectPt(vector3& vecIn)
 {
     ////// get reciprocal of distance
     //float DR = distance;
@@ -451,31 +451,11 @@ vector3 Graphics::ProjectPt(vector3& vecIn)
     // make sure that the PROJECTION side (distance to Screen)
     // and physical vector side (offset) are being calculated independently
 
-    //return
-    //{
-    //    (vecIn.x/vecIn.z)*m_lensToScrn,
-    //    (vecIn.y/vecIn.z)*m_lensToScrn
-    //};
-
-    // far = 1000
-    // near = 50
-    // difference = far - m_lensToScrn = DEPTH RANGE
-    // subtract every z by m_lensToScrn
-
-    // TODO: if z value gets below zero, then don't draw
-
-    float depthCoefficient = (vecIn.z - m_nearPln) / (m_farPln - m_nearPln);
-
-    //return
-    //{
-    //    (vecIn.x/vecIn.z)*m_lensToScrn,
-    //    (vecIn.y/vecIn.z)*m_lensToScrn,
-    //    vecIn.z};
-
-        return {
-        vecIn.x*depthCoefficient,
-        vecIn.y*depthCoefficient,
-        vecIn.z};
+    return
+    {
+        (vecIn.x/vecIn.z)*m_lensToScrn,
+        (vecIn.y/vecIn.z)*m_lensToScrn
+    };
 }
 
 vector<triangle3D> Graphics::GetTriangleList(tetrahedron polygon)

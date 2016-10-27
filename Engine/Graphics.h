@@ -79,7 +79,7 @@ public:
     ******* ESSENTIAL FUNCTIONS *******
     ***********************************/
     vector3 Rotate3D(vector3 & vec, const float& theta, char axis);
-    vector3 ProjectPt(vector3 & vec);
+    vector2 ProjectPt(vector3 & vec);
     vector<triangle3D> GetTriangleList(tetrahedron polygon);
 
     vector<vector3> Translate(vector<vector3>& vertices, vector3& worldPosition);
@@ -144,8 +144,8 @@ private:
     ////////////// VARIABLES FOR PROJECTION ///////////////////
     ///////////////////////////////////////////////////////////
     float m_nearPln = 50.f;
-    float m_farPln = 500.f; // CANNOT BE 0!
-    //float m_lensToScrn = 500.0f; 
+    float m_farPln = 100.f;
+    float m_lensToScrn = 500.0f; // CANNOT BE 0!
 
 public:
 	static constexpr unsigned int ScreenWidth = 800u;
